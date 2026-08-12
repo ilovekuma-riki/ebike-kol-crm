@@ -1,0 +1,2 @@
+import { NextResponse } from "next/server"; import { prisma } from "@/lib/db";
+export async function GET(_:Request,{params}:{params:Promise<{storeId:string;jobId:string}>}){const {jobId}=await params;try{const job=await prisma.syncLog.findUnique({where:{id:jobId}});return job?NextResponse.json(job):NextResponse.json({error:"同步任务不存在"},{status:404})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"查询失败"},{status:500})}}

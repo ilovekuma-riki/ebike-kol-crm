@@ -1,0 +1,2 @@
+import { NextResponse } from "next/server"; import { timingSafeEqual } from "node:crypto";
+function valid(a:string|null,b:string){if(!a||a.length!==b.length)return false;return timingSafeEqual(Buffer.from(a),Buffer.from(b))}export async function POST(request:Request){if(!valid(request.headers.get("x-webhook-secret"),process.env.N8N_WEBHOOK_SECRET??""))return NextResponse.json({error:"Unauthorized"},{status:401});return NextResponse.json({accepted:true,type:"task",payload:await request.json()},{status:202})}

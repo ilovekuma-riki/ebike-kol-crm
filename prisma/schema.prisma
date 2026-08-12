@@ -1,0 +1,625 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  admin
+  manager
+  operator
+  viewer
+}
+
+enum PartnerType {
+  KOL
+  Media
+  Affiliate
+  Dealer
+  Photographer
+  CustomerAdvocate
+}
+
+enum PartnerStatus {
+  potential
+  contacted
+  replied
+  negotiating
+  contracting
+  active
+  paused
+  completed
+  blacklisted
+}
+
+enum Platform {
+  youtube
+  tiktok
+  instagram
+  facebook
+  website
+  other
+}
+
+enum CollaborationType {
+  free_product
+  paid
+  affiliate_only
+  product_exchange
+  discount_purchase
+  dealer
+  media
+  hybrid
+}
+
+enum CollaborationStatus {
+  potential
+  contacted
+  replied
+  negotiating
+  contract_pending
+  signed
+  waiting_shipment
+  shipped
+  delivered
+  content_production
+  partially_published
+  completed
+  paused
+  terminated
+}
+
+enum Priority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum ContentType {
+  long_video
+  short_video
+  tiktok
+  reel
+  youtube_short
+  photo
+  blog
+  article
+  raw_video
+  exclusive_video
+  other
+}
+
+enum DeliverableStatus {
+  pending
+  in_progress
+  partially_published
+  completed
+  overdue
+  waived
+}
+
+enum WorkflowStatus {
+  pending
+  completed
+  blocked
+}
+
+enum TaskType {
+  follow_up
+  contract
+  shipment
+  delivery
+  content_due
+  content_overdue
+  one_month_review
+  payment
+  affiliate
+  issue
+  other
+}
+
+enum TaskStatus {
+  todo
+  in_progress
+  done
+  cancelled
+}
+
+enum AttributionType {
+  discount_code
+  affiliate
+  utm
+  manual
+}
+
+enum ImportStatus {
+  uploaded
+  analyzed
+  committing
+  completed
+  failed
+}
+
+enum SyncStatus {
+  queued
+  running
+  completed
+  partial
+  failed
+}
+
+model User {
+  id                  String          @id @default(uuid())
+  authUserId          String?         @unique @map("auth_user_id")
+  name                String
+  email               String          @unique
+  role                UserRole        @default(operator)
+  ownedPartners       Partner[]
+  ownedCollaborations Collaboration[]
+  tasks               Task[]
+  notes               PartnerNote[]
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Partner {
+  id             String          @id @default(uuid())
+  partnerCode    String          @unique @map("partner_code")
+  name           String
+  canonicalName  String          @map("canonical_name")
+  partnerType    PartnerType     @default(KOL) @map("partner_type")
+  creatorCountry String?         @map("creator_country")
+  targetMarket   String?         @map("target_market")
+  email          String?
+  secondaryEmail String?         @map("secondary_email")
+  phone          String?
+  status         PartnerStatus   @default(potential)
+  ownerUserId    String?         @map("owner_user_id")
+  notesText      String?         @map("notes")
+  archivedAt     DateTime?       @map("archived_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  owner          User?           @relation(fields: [ownerUserId], references: [id])
+  socialAccounts SocialAccount[]
+  collaborations Collaboration[]
+  contents       Content[]
+  assets         ContentAsset[]
+  discountCodes  DiscountCode[]
+  attributions   Attribution[]
+  tasks          Task[]
+  scores         KolScore[]
+  notes          PartnerNote[]
+
+  @@index([canonicalName])
+  @@index([status])
+  @@index([ownerUserId])
+  @@map("partners")
+}
+
+model SocialAccount {
+  id                String    @id @default(uuid())
+  partnerId         String    @map("partner_id")
+  platform          Platform
+  handle            String?
+  profileUrl        String    @map("profile_url")
+  normalizedUrl     String    @map("normalized_url")
+  followers         Int?
+  avgViews          Int?      @map("avg_views")
+  medianViews       Int?      @map("median_views")
+  engagementRate    Decimal?  @map("engagement_rate") @db.Decimal(7, 4)
+  postingFrequency  String?   @map("posting_frequency")
+  audienceCountry   String?   @map("audience_country")
+  audienceGender    Json?     @map("audience_gender")
+  audienceAge       Json?     @map("audience_age")
+  isPrimary         Boolean   @default(false) @map("is_primary")
+  lastMetricsUpdate DateTime? @map("last_metrics_update")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  partner           Partner   @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  contents          Content[]
+
+  @@unique([normalizedUrl])
+  @@index([partnerId])
+  @@index([platform, handle])
+  @@map("social_accounts")
+}
+
+model Collaboration {
+  id                String              @id @default(uuid())
+  collaborationCode String              @unique @map("collaboration_code")
+  partnerId         String              @map("partner_id")
+  product           String
+  sku               String?
+  targetMarket      String              @map("target_market")
+  startDate         DateTime?           @map("start_date")
+  endDate           DateTime?           @map("end_date")
+  contractDate      DateTime?           @map("contract_date")
+  collaborationType CollaborationType   @map("collaboration_type")
+  cashCost          Decimal             @default(0) @map("cash_cost") @db.Decimal(14, 2)
+  currency          String              @default("USD")
+  bikeCost          Decimal             @default(0) @map("bike_cost") @db.Decimal(14, 2)
+  shippingCost      Decimal             @default(0) @map("shipping_cost") @db.Decimal(14, 2)
+  otherCost         Decimal             @default(0) @map("other_cost") @db.Decimal(14, 2)
+  commissionRate    Decimal?            @map("commission_rate") @db.Decimal(7, 4)
+  status            CollaborationStatus @default(negotiating)
+  priority          Priority            @default(medium)
+  ownerUserId       String?             @map("owner_user_id")
+  issueType         String?             @map("issue_type")
+  issueNote         String?             @map("issue_note")
+  nextAction        String?             @map("next_action")
+  nextActionDate    DateTime?           @map("next_action_date")
+  archivedAt        DateTime?           @map("archived_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  partner           Partner             @relation(fields: [partnerId], references: [id])
+  owner             User?               @relation(fields: [ownerUserId], references: [id])
+  deliverables      Deliverable[]
+  contents          Content[]
+  assets            ContentAsset[]
+  discountCodes     DiscountCode[]
+  attributions      Attribution[]
+  tasks             Task[]
+  workflowSteps     WorkflowStep[]
+
+  @@index([partnerId])
+  @@index([status])
+  @@index([ownerUserId])
+  @@map("collaborations")
+}
+
+model Deliverable {
+  id                      String            @id @default(uuid())
+  collaborationId         String            @map("collaboration_id")
+  platform                Platform
+  contentType             ContentType       @map("content_type")
+  title                   String
+  requiredQuantity        Int               @default(1) @map("required_quantity")
+  publishedQuantity       Int               @default(0) @map("published_quantity")
+  monthlyRequiredQuantity Int?              @map("monthly_required_quantity")
+  durationMonths          Int?              @map("duration_months")
+  brandAccountQuantity    Int               @default(0) @map("brand_account_quantity")
+  deadline                DateTime?
+  usageRights             String[]          @map("usage_rights")
+  status                  DeliverableStatus @default(pending)
+  notes                   String?
+  createdAt               DateTime          @default(now()) @map("created_at")
+  updatedAt               DateTime          @updatedAt @map("updated_at")
+  collaboration           Collaboration     @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  contents                Content[]
+
+  @@index([collaborationId])
+  @@index([status, deadline])
+  @@map("deliverables")
+}
+
+model Content {
+  id                    String         @id @default(uuid())
+  contentCode           String         @unique @map("content_code")
+  partnerId             String         @map("partner_id")
+  collaborationId       String?        @map("collaboration_id")
+  deliverableId         String?        @map("deliverable_id")
+  socialAccountId       String?        @map("social_account_id")
+  platform              Platform
+  contentType           ContentType    @map("content_type")
+  title                 String?
+  url                   String         @unique
+  publishDate           DateTime?      @map("publish_date")
+  views                 BigInt         @default(0)
+  likes                 BigInt         @default(0)
+  comments              BigInt         @default(0)
+  shares                BigInt         @default(0)
+  engagementRate        Decimal?       @map("engagement_rate") @db.Decimal(7, 4)
+  isBrandAccountContent Boolean        @default(false) @map("is_brand_account_content")
+  usageRights           String[]       @map("usage_rights")
+  thumbnailUrl          String?        @map("thumbnail_url")
+  lastMetricsUpdate     DateTime?      @map("last_metrics_update")
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedAt             DateTime       @updatedAt @map("updated_at")
+  partner               Partner        @relation(fields: [partnerId], references: [id])
+  collaboration         Collaboration? @relation(fields: [collaborationId], references: [id])
+  deliverable           Deliverable?   @relation(fields: [deliverableId], references: [id])
+  socialAccount         SocialAccount? @relation(fields: [socialAccountId], references: [id])
+  assets                ContentAsset[]
+  attributions          Attribution[]
+
+  @@index([partnerId])
+  @@index([collaborationId])
+  @@index([publishDate])
+  @@map("contents")
+}
+
+model ContentAsset {
+  id              String         @id @default(uuid())
+  partnerId       String         @map("partner_id")
+  collaborationId String?        @map("collaboration_id")
+  contentId       String?        @map("content_id")
+  type            String
+  url             String         @unique
+  description     String?
+  createdAt       DateTime       @default(now()) @map("created_at")
+  partner         Partner        @relation(fields: [partnerId], references: [id])
+  collaboration   Collaboration? @relation(fields: [collaborationId], references: [id])
+  content         Content?       @relation(fields: [contentId], references: [id])
+
+  @@index([partnerId])
+  @@index([collaborationId])
+  @@map("content_assets")
+}
+
+model Store {
+  id               String                 @id @default(uuid())
+  storeCode        String                 @unique @map("store_code")
+  name             String
+  market           String
+  currency         String
+  shopifyDomain    String?                @map("shopify_domain")
+  status           String                 @default("disconnected")
+  lastSyncAt       DateTime?              @map("last_sync_at")
+  orders           ShopifyOrder[]
+  discountMappings DiscountStoreMapping[]
+  syncLogs         SyncLog[]
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+
+  @@map("stores")
+}
+
+model DiscountCode {
+  id              String                 @id @default(uuid())
+  partnerId       String                 @map("partner_id")
+  collaborationId String?                @map("collaboration_id")
+  code            String
+  partner         Partner                @relation(fields: [partnerId], references: [id])
+  collaboration   Collaboration?         @relation(fields: [collaborationId], references: [id])
+  storeMappings   DiscountStoreMapping[]
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+
+  @@unique([partnerId, code])
+  @@index([code])
+  @@map("discount_codes")
+}
+
+model DiscountStoreMapping {
+  id             String       @id @default(uuid())
+  discountCodeId String       @map("discount_code_id")
+  storeId        String       @map("store_id")
+  isActive       Boolean      @default(true) @map("is_active")
+  startDate      DateTime?    @map("start_date")
+  endDate        DateTime?    @map("end_date")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  discountCode   DiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Cascade)
+  store          Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([discountCodeId, storeId])
+  @@index([storeId])
+  @@map("discount_store_mappings")
+}
+
+model ShopifyOrder {
+  id                String        @id @default(uuid())
+  shopifyOrderId    String        @map("shopify_order_id")
+  orderNumber       String        @map("order_number")
+  storeId           String        @map("store_id")
+  orderDate         DateTime      @map("order_date")
+  customerCountry   String?       @map("customer_country")
+  currency          String
+  grossSales        Decimal       @map("gross_sales") @db.Decimal(14, 2)
+  discountAmount    Decimal       @default(0) @map("discount_amount") @db.Decimal(14, 2)
+  netSales          Decimal       @map("net_sales") @db.Decimal(14, 2)
+  refundAmount      Decimal       @default(0) @map("refund_amount") @db.Decimal(14, 2)
+  netRevenue        Decimal       @map("net_revenue") @db.Decimal(14, 2)
+  discountCode      String?       @map("discount_code")
+  landingPage       String?       @map("landing_page")
+  utmSource         String?       @map("utm_source")
+  utmMedium         String?       @map("utm_medium")
+  utmCampaign       String?       @map("utm_campaign")
+  utmContent        String?       @map("utm_content")
+  affiliateReferral String?       @map("affiliate_referral")
+  financialStatus   String        @map("financial_status")
+  rawPayload        Json?         @map("raw_payload")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  store             Store         @relation(fields: [storeId], references: [id])
+  items             OrderItem[]
+  attributions      Attribution[]
+
+  @@unique([storeId, shopifyOrderId])
+  @@index([storeId])
+  @@index([orderDate])
+  @@index([discountCode])
+  @@map("shopify_orders")
+}
+
+model OrderItem {
+  id             String       @id @default(uuid())
+  shopifyOrderId String       @map("shopify_order_id")
+  productTitle   String       @map("product_title")
+  variantTitle   String?      @map("variant_title")
+  sku            String?
+  quantity       Int
+  grossAmount    Decimal      @map("gross_amount") @db.Decimal(14, 2)
+  netAmount      Decimal      @map("net_amount") @db.Decimal(14, 2)
+  order          ShopifyOrder @relation(fields: [shopifyOrderId], references: [id], onDelete: Cascade)
+
+  @@index([shopifyOrderId])
+  @@map("order_items")
+}
+
+model Attribution {
+  id                String          @id @default(uuid())
+  shopifyOrderId    String          @map("shopify_order_id")
+  partnerId         String          @map("partner_id")
+  collaborationId   String?         @map("collaboration_id")
+  contentId         String?         @map("content_id")
+  attributionType   AttributionType @map("attribution_type")
+  confidenceScore   Decimal         @map("confidence_score") @db.Decimal(5, 4)
+  attributedRevenue Decimal         @map("attributed_revenue") @db.Decimal(14, 2)
+  matchReason       String?         @map("match_reason")
+  isPrimary         Boolean         @default(true) @map("is_primary")
+  supersededAt      DateTime?       @map("superseded_at")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  order             ShopifyOrder    @relation(fields: [shopifyOrderId], references: [id])
+  partner           Partner         @relation(fields: [partnerId], references: [id])
+  collaboration     Collaboration?  @relation(fields: [collaborationId], references: [id])
+  content           Content?        @relation(fields: [contentId], references: [id])
+
+  @@index([shopifyOrderId, isPrimary])
+  @@index([partnerId])
+  @@map("attributions")
+}
+
+model Task {
+  id              String         @id @default(uuid())
+  partnerId       String?        @map("partner_id")
+  collaborationId String?        @map("collaboration_id")
+  title           String
+  description     String?
+  taskType        TaskType       @map("task_type")
+  dueDate         DateTime       @map("due_date")
+  status          TaskStatus     @default(todo)
+  priority        Priority       @default(medium)
+  ownerUserId     String?        @map("owner_user_id")
+  autoGenerated   Boolean        @default(false) @map("auto_generated")
+  automationKey   String?        @unique @map("automation_key")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  completedAt     DateTime?      @map("completed_at")
+  partner         Partner?       @relation(fields: [partnerId], references: [id])
+  collaboration   Collaboration? @relation(fields: [collaborationId], references: [id])
+  owner           User?          @relation(fields: [ownerUserId], references: [id])
+
+  @@index([status, dueDate])
+  @@index([ownerUserId])
+  @@map("tasks")
+}
+
+model WorkflowStep {
+  id              String         @id @default(uuid())
+  collaborationId String         @map("collaboration_id")
+  stepKey         String         @map("step_key")
+  label           String
+  sequence        Int
+  status          WorkflowStatus @default(pending)
+  completedAt     DateTime?      @map("completed_at")
+  note            String?
+  collaboration   Collaboration  @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+
+  @@unique([collaborationId, stepKey])
+  @@map("workflow_steps")
+}
+
+model KolScore {
+  id                     String   @id @default(uuid())
+  partnerId              String   @map("partner_id")
+  salesScore             Decimal? @map("sales_score") @db.Decimal(5, 2)
+  roasScore              Decimal? @map("roas_score") @db.Decimal(5, 2)
+  contentScore           Decimal  @map("content_score") @db.Decimal(5, 2)
+  engagementScore        Decimal  @map("engagement_score") @db.Decimal(5, 2)
+  costEfficiencyScore    Decimal? @map("cost_efficiency_score") @db.Decimal(5, 2)
+  audienceFitScore       Decimal  @map("audience_fit_score") @db.Decimal(5, 2)
+  reliabilityScore       Decimal  @map("reliability_score") @db.Decimal(5, 2)
+  totalScore             Decimal? @map("total_score") @db.Decimal(5, 2)
+  scoreVersion           String   @map("score_version")
+  hasSufficientSalesData Boolean  @default(false) @map("has_sufficient_sales_data")
+  calculatedAt           DateTime @default(now()) @map("calculated_at")
+  partner                Partner  @relation(fields: [partnerId], references: [id])
+
+  @@index([partnerId, calculatedAt])
+  @@map("kol_scores")
+}
+
+model PartnerNote {
+  id        String   @id @default(uuid())
+  partnerId String   @map("partner_id")
+  authorId  String?  @map("author_id")
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+  partner   Partner  @relation(fields: [partnerId], references: [id])
+  author    User?    @relation(fields: [authorId], references: [id])
+
+  @@index([partnerId])
+  @@map("partner_notes")
+}
+
+model CreatorCandidate {
+  id              String    @id @default(uuid())
+  name            String
+  platform        Platform
+  handle          String?
+  url             String
+  country         String?
+  followers       Int?
+  avgViews        Int?      @map("avg_views")
+  engagementRate  Decimal?  @map("engagement_rate") @db.Decimal(7, 4)
+  contentCategory String?   @map("content_category")
+  audienceFit     Decimal?  @map("audience_fit") @db.Decimal(5, 2)
+  similarityScore Decimal?  @map("similarity_score") @db.Decimal(5, 2)
+  potentialScore  Decimal?  @map("potential_score") @db.Decimal(5, 2)
+  status          String    @default("new")
+  notes           String?
+  archivedAt      DateTime? @map("archived_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("creator_candidates")
+}
+
+model ImportJob {
+  id             String       @id @default(uuid())
+  fileName       String       @map("file_name")
+  fileHash       String       @map("file_hash")
+  status         ImportStatus @default(uploaded)
+  columnMapping  Json?        @map("column_mapping")
+  totalRows      Int          @default(0) @map("total_rows")
+  createdCount   Int          @default(0) @map("created_count")
+  updatedCount   Int          @default(0) @map("updated_count")
+  duplicateCount Int          @default(0) @map("duplicate_count")
+  errorCount     Int          @default(0) @map("error_count")
+  committedAt    DateTime?    @map("committed_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  rows           ImportRow[]
+
+  @@index([fileHash])
+  @@map("import_jobs")
+}
+
+model ImportRow {
+  id             String    @id @default(uuid())
+  importJobId    String    @map("import_job_id")
+  rowNumber      Int       @map("row_number")
+  sourceData     Json      @map("source_data")
+  normalizedData Json?     @map("normalized_data")
+  warnings       Json?
+  errors         Json?
+  resolution     String?
+  processedAt    DateTime? @map("processed_at")
+  job            ImportJob @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+
+  @@unique([importJobId, rowNumber])
+  @@map("import_rows")
+}
+
+model SyncLog {
+  id             String     @id @default(uuid())
+  storeId        String     @map("store_id")
+  status         SyncStatus @default(queued)
+  startedAt      DateTime?  @map("started_at")
+  endedAt        DateTime?  @map("ended_at")
+  ordersFetched  Int        @default(0) @map("orders_fetched")
+  ordersInserted Int        @default(0) @map("orders_inserted")
+  ordersUpdated  Int        @default(0) @map("orders_updated")
+  cursor         String?
+  errors         Json?
+  store          Store      @relation(fields: [storeId], references: [id])
+
+  @@index([storeId, startedAt])
+  @@map("sync_logs")
+}

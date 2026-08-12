@@ -1,0 +1,2 @@
+import { cn } from "@/lib/utils";
+export function StatusPill({ children, tone="neutral" }: { children: React.ReactNode; tone?: "neutral"|"good"|"warn"|"danger"|"blue" }) { return <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold", tone==="good"&&"bg-[#e4f0ea] text-[#286348]", tone==="warn"&&"bg-[#f7ecdf] text-[#8b551f]", tone==="danger"&&"bg-[#f6e4e2] text-[#9c403a]", tone==="blue"&&"bg-[#e5ebf2] text-[#3f5f7c]", tone==="neutral"&&"bg-[#eef0f2] text-[#5d6670]")}>{children}</span>; }

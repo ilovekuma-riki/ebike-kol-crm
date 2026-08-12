@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+:root { --ink:#111418; --graphite:#59616b; --mist:#e7eaed; --snow:#fafbfc; --blue:#5b7695; --blue-soft:#e8edf3; --green:#33755b; --amber:#a76522; --red:#b64d46; }
+* { box-sizing: border-box; }
+html { background: var(--snow); }
+body { margin:0; color:var(--ink); background:var(--snow); font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif; }
+button,input,select { font:inherit; }
+button,a { -webkit-tap-highlight-color: transparent; }
+a { color:inherit; text-decoration:none; }
+:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+.font-display { font-family: "Arial Narrow", "PingFang SC", sans-serif; letter-spacing:-.035em; }
+.font-mono { font-family: "SFMono-Regular", Consolas, monospace; }
+.scrollbar-none { scrollbar-width:none; }
+.scrollbar-none::-webkit-scrollbar { display:none; }
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
