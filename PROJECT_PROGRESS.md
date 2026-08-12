@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-- GitHub：准备发布到用户私有仓库，仓库可见性必须保持 `Private`。
+- GitHub：已发布到私有仓库 <https://github.com/ilovekuma-riki/ebike-kol-crm>，默认分支为 `main`。
 - Vercel：已部署生产版本至 <https://ebike-kol-crm.vercel.app>。
 - 访问控制：已实现 Supabase 邮箱 Magic Link；只有管理员预先添加的邮箱可登录，线上环境禁止无认证绕过。
 - 数据模式：当前线上未配置真实 Supabase/PostgreSQL/Shopify 凭证时，业务数据仍为演示数据。
