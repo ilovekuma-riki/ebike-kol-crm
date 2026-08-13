@@ -10,6 +10,7 @@
 - 数据模式：已接入真实 Supabase PostgreSQL；当前业务数据为写入真实库的四站 Seed 数据，Shopify 凭证仍待配置。
 - Supabase：项目 `rideops-ebike-kol-crm`（新加坡区）已创建，migration 与 seed 已完成。
 - Auth：管理员 `3055667084@qq.com` 已邀请并关联业务 `users` 记录；公开注册已关闭。
+- Phase 2：Partners 列表、Partner 详情、Dashboard KPI、Pipeline、Tasks、Sales、Content 已改为通过 Prisma 查询真实数据库；Collaborations 列表也已同步接入 DB。
 
 ## 已完成
 
@@ -20,6 +21,7 @@
 - 四站订单模拟数据、Global 分币种展示、ROAS/CAC 与 KOL 评分服务。
 - Vercel 生产构建和 `/dashboard` 可用性验证。
 - 邮箱 Magic Link 登录页、PKCE 回调、受保护路由和线上 fail-closed（缺配置即锁定）。
+- 新增 `src/lib/queries.ts` 作为 server-only 数据访问层；运营页面标记为动态渲染，避免构建期预渲染时连接数据库。
 
 ## 上线前必须完成
 
@@ -33,6 +35,7 @@
 - [x] 四站订单主键隔离与折扣码按 Store 映射。
 - [x] 导入分析与确认写入分离，重复提交幂等。
 - [ ] 使用真实 Supabase 邮箱完成端到端登录测试：邀请已发送；Vercel 新部署当前受平台构建队列异常阻塞，主域名仍运行旧版。
+- [ ] Phase 2 页面运行时验收：代码已完成；当前本机 Postgres pooler `aws-0-ap-southeast-1.pooler.supabase.com:6543` 不可达，待网络/连接串恢复后逐页验证真实数据渲染。
 - [ ] 使用四站真实 Shopify token 完成分页、限流、退款与增量同步测试。
 - [ ] 为 API Route 增加完整角色级授权测试。
 - [ ] 对历史联系人数据制定团队访问和保留策略。
