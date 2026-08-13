@@ -1,13 +1,15 @@
 # RideOps 项目进度
 
-更新日期：2026-08-12
+更新日期：2026-08-13
 
 ## 当前状态
 
 - GitHub：已发布到私有仓库 <https://github.com/ilovekuma-riki/ebike-kol-crm>，默认分支为 `main`。
 - Vercel：已部署生产版本至 <https://ebike-kol-crm.vercel.app>。
 - 访问控制：已实现 Supabase 邮箱 Magic Link；只有管理员预先添加的邮箱可登录，线上环境禁止无认证绕过。
-- 数据模式：当前线上未配置真实 Supabase/PostgreSQL/Shopify 凭证时，业务数据仍为演示数据。
+- 数据模式：已接入真实 Supabase PostgreSQL；当前业务数据为写入真实库的四站 Seed 数据，Shopify 凭证仍待配置。
+- Supabase：项目 `rideops-ebike-kol-crm`（新加坡区）已创建，migration 与 seed 已完成。
+- Auth：管理员 `3055667084@qq.com` 已邀请并关联业务 `users` 记录；公开注册已关闭。
 
 ## 已完成
 
@@ -21,12 +23,8 @@
 
 ## 上线前必须完成
 
-1. 创建 Supabase 项目并在 Vercel 配置 `DATABASE_URL`、`DIRECT_URL`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`。
-2. 在 Supabase Auth URL Configuration 添加 `https://ebike-kol-crm.vercel.app` 与回调地址 `/auth/callback`。
-3. 在 Supabase Authentication → Users 邀请允许访问的工作邮箱；系统不会为陌生邮箱自动注册。
-4. 执行 Prisma migration 和 seed，并将 `users.auth_user_id` 关联到对应 Supabase Auth 用户。
-5. 分别配置 EU、US、CA、BR 四站 Shopify 域名与 Admin API token，再逐站执行首次同步。
-6. 设置高强度 `N8N_WEBHOOK_SECRET`，并验证所有生产 API 的角色权限。
+1. 分别配置 EU、US、CA、BR 四站 Shopify 域名与 Admin API token，再逐站执行首次同步。
+2. 设置高强度 `N8N_WEBHOOK_SECRET`，并验证所有生产 API 的角色权限。
 
 ## 验收清单
 
@@ -34,7 +32,7 @@
 - [x] 邮箱 Magic Link：不允许登录动作自动创建用户。
 - [x] 四站订单主键隔离与折扣码按 Store 映射。
 - [x] 导入分析与确认写入分离，重复提交幂等。
-- [ ] 使用真实 Supabase 邮箱完成端到端登录测试。
+- [ ] 使用真实 Supabase 邮箱完成端到端登录测试（部署后执行）。
 - [ ] 使用四站真实 Shopify token 完成分页、限流、退款与增量同步测试。
 - [ ] 为 API Route 增加完整角色级授权测试。
 - [ ] 对历史联系人数据制定团队访问和保留策略。

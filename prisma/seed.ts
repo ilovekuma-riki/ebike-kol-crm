@@ -2,7 +2,8 @@ import { PrismaClient, Platform } from "@prisma/client";
 const prisma=new PrismaClient();
 const workflow=["合作确认","协议签署","Affiliate","折扣码","发货","Tracking","签收","开箱","内容制作","内容发布","30日复盘"];
 async function main(){
-  const owner=await prisma.user.upsert({where:{email:"manager@example.com"},update:{},create:{name:"KOL Manager",email:"manager@example.com",role:"admin"}});
+  const adminEmail=process.env.ADMIN_EMAIL?.trim()||"manager@example.com";
+  const owner=await prisma.user.upsert({where:{email:adminEmail},update:{role:"admin"},create:{name:"KOL Manager",email:adminEmail,role:"admin"}});
   const storeData=[{storeCode:"EU",name:"欧洲站",market:"EU",currency:"EUR"},{storeCode:"US",name:"美国站",market:"US",currency:"USD"},{storeCode:"CA",name:"加拿大站",market:"CA",currency:"CAD"},{storeCode:"BR",name:"巴西站",market:"BR",currency:"BRL"}];
   const stores=[];for(const s of storeData)stores.push(await prisma.store.upsert({where:{storeCode:s.storeCode},update:s,create:s}));
   const people=[{code:"KOL-000001",name:"MAXX",country:"Austria",market:"EU",platform:"tiktok" as Platform,handle:"@maxxbikez",url:"https://www.tiktok.com/@maxxbikez",email:"maxxbikez.official@gmail.com"},{code:"KOL-000002",name:"68v_razor",country:"US",market:"US",platform:"tiktok" as Platform,handle:"@68v_razor",url:"https://www.tiktok.com/@68v_razor"},{code:"KOL-000003",name:"Deo_on2",country:"US",market:"US",platform:"youtube" as Platform,handle:"@deo_on2",url:"https://www.youtube.com/@deo_on2"},{code:"KOL-000004",name:"The Bike Cave",country:"CA",market:"CA",platform:"youtube" as Platform,handle:"@thebikecave",url:"https://www.youtube.com/@thebikecave"},{code:"MEDIA-000001",name:"Electric Revolution",country:"US",market:"Global",platform:"youtube" as Platform,handle:"@electricrevolution",url:"https://www.youtube.com/@electricrevolution"}];
