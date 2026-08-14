@@ -126,8 +126,22 @@ enum TaskType {
 enum TaskStatus {
   todo
   in_progress
+  waiting_external
   done
   cancelled
+}
+
+enum PartnerNoteType {
+  partner_profile
+  email
+  proposal
+  shipment
+  content_review
+  publication
+  commission
+  after_sales
+  internal
+  other
 }
 
 enum AttributionType {
@@ -267,6 +281,7 @@ model Collaboration {
   attributions      Attribution[]
   tasks             Task[]
   workflowSteps     WorkflowStep[]
+  notes             PartnerNote[]
 
   @@index([partnerId])
   @@index([status])
@@ -536,15 +551,23 @@ model KolScore {
 }
 
 model PartnerNote {
-  id        String   @id @default(uuid())
-  partnerId String   @map("partner_id")
-  authorId  String?  @map("author_id")
-  body      String
-  createdAt DateTime @default(now()) @map("created_at")
-  partner   Partner  @relation(fields: [partnerId], references: [id])
-  author    User?    @relation(fields: [authorId], references: [id])
+  id              String          @id @default(uuid())
+  partnerId       String          @map("partner_id")
+  collaborationId String?         @map("collaboration_id")
+  authorId        String?         @map("author_id")
+  noteType        PartnerNoteType @default(partner_profile) @map("note_type")
+  body            String
+  nextAction      String?         @map("next_action")
+  followUpAt      DateTime?       @map("follow_up_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  partner         Partner         @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  collaboration   Collaboration?  @relation(fields: [collaborationId], references: [id], onDelete: SetNull)
+  author          User?           @relation(fields: [authorId], references: [id])
 
   @@index([partnerId])
+  @@index([collaborationId])
+  @@index([followUpAt])
   @@map("partner_notes")
 }
 
