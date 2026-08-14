@@ -45,3 +45,5 @@
 - `.env*`、Vercel 项目元数据、依赖和构建产物均被 Git 忽略。
 - `fixtures/legacy-kol-import.tsv` 包含真实联系邮箱，因此 GitHub 仓库不得改为 Public。
 - GitHub 私有仓库控制源码可见性；线上页面访问由 Supabase Auth 独立控制，两者缺一不可。
+
+- Phase 3 Partner 工作台已合并至 main，Vercel Git 自动部署连接已恢复。
