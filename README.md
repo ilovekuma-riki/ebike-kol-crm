@@ -43,6 +43,22 @@ src/lib/            归因、Shopify、指标、Supabase 与 Prisma
 - Shopify Order 使用 `store_id + shopify_order_id` 去重。
 - Discount Code 通过 `discount_store_mappings` 与四站独立关联。
 - 人工归因会停用旧 primary 记录，不会修改原始 Shopify 订单。
+- Partner 备注既可作为长期主档备注，也可关联到一轮具体合作；每条记录支持类型、下一步行动、跟进时间、作者和时间线。
+- 任务可关联 Partner 和合作，并支持 `todo`、`in_progress`、`waiting_external`、`done`、`cancelled` 五种状态。
+
+## Partner 工作台
+
+- `/partners`：新建 Partner，并进入个人工作台。
+- `/partners/[id]`：编辑主档、新建合作、维护合作跟进记录、添加/更新任务。
+- `/collaborations`：查看真实合作记录并新建合作。
+- `/tasks`：查看真实任务并直接更新状态。
+
+升级已有数据库后，先执行：
+
+```bash
+npx prisma migrate deploy
+npx prisma generate
+```
 
 ## Supabase 配置
 
