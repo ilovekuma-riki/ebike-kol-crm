@@ -3,6 +3,11 @@ import { z } from "zod";
 const optionalText = z.string().trim().max(500).optional().nullable();
 const optionalDate = z.string().trim().optional().nullable();
 
+const ownerFields = {
+  ownerUserId: optionalText,
+  ownerName: z.string().trim().max(120).optional().nullable(),
+};
+
 export const partnerSchema = z.object({
   name: z.string().trim().min(1, "请填写 Partner 名称").max(120),
   partnerType: z.enum(["KOL", "Media", "Affiliate", "Dealer", "Photographer", "CustomerAdvocate"]),
@@ -11,13 +16,25 @@ export const partnerSchema = z.object({
   email: z.union([z.literal(""), z.email("邮箱格式不正确")]).optional().nullable(),
   phone: optionalText,
   status: z.enum(["potential", "contacted", "replied", "negotiating", "contracting", "active", "paused", "completed", "blacklisted"]),
-  ownerUserId: optionalText,
+  ...ownerFields,
   notesText: z.string().trim().max(3000).optional().nullable(),
   platform: z.enum(["youtube", "tiktok", "instagram", "facebook", "website", "other"]).optional().nullable(),
   handle: optionalText,
   profileUrl: z.union([z.literal(""), z.url("主页链接格式不正确")]).optional().nullable(),
   followers: z.coerce.number().int().min(0).optional().nullable(),
   avgViews: z.coerce.number().int().min(0).optional().nullable(),
+});
+
+export const socialAccountSchema = z.object({
+  platform: z.enum(["youtube", "tiktok", "instagram", "facebook", "website", "other"]),
+  handle: optionalText,
+  profileUrl: z.url("主页链接格式不正确"),
+  followers: z.coerce.number().int().min(0).optional().nullable(),
+  avgViews: z.coerce.number().int().min(0).optional().nullable(),
+  medianViews: z.coerce.number().int().min(0).optional().nullable(),
+  postingFrequency: optionalText,
+  audienceCountry: optionalText,
+  isPrimary: z.coerce.boolean().optional().default(false),
 });
 
 export const collaborationSchema = z.object({
@@ -31,7 +48,7 @@ export const collaborationSchema = z.object({
   commissionRate: z.coerce.number().min(0).max(100).optional().nullable(),
   status: z.enum(["potential", "contacted", "replied", "negotiating", "contract_pending", "signed", "waiting_shipment", "shipped", "delivered", "content_production", "partially_published", "completed", "paused", "terminated"]),
   priority: z.enum(["low", "medium", "high", "urgent"]),
-  ownerUserId: optionalText,
+  ...ownerFields,
   startDate: optionalDate,
   endDate: optionalDate,
   nextAction: optionalText,
@@ -55,10 +72,13 @@ export const taskSchema = z.object({
   dueDate: z.string().trim().min(1, "请选择截止时间"),
   status: z.enum(["todo", "in_progress", "waiting_external", "done", "cancelled"]),
   priority: z.enum(["low", "medium", "high", "urgent"]),
-  ownerUserId: optionalText,
+  ...ownerFields,
 });
 
 export const taskStatusSchema = z.object({ status: z.enum(["todo", "in_progress", "waiting_external", "done", "cancelled"]) });
 
 export function nullableDate(value?: string | null) { return value ? new Date(value) : null; }
 export function nullableId(value?: string | null) { return value || null; }
+export function normalizeProfileUrl(value: string) {
+  return value.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "").toLowerCase();
+}
