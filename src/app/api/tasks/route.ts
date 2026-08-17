@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { apiError, requireEditor } from "@/lib/authz";
 import { nullableId, taskSchema } from "@/lib/crm-validation";
+import { resolveOwnerUserId } from "@/lib/owners";
 
 export async function POST(request: Request) {
   try {
@@ -12,10 +13,18 @@ export async function POST(request: Request) {
       const collaboration = await prisma.collaboration.findFirst({ where: { id: data.collaborationId, partnerId: data.partnerId }, select: { id: true } });
       if (!collaboration) return Response.json({ error: "所选合作不属于该 Partner" }, { status: 400 });
     }
+    const ownerUserId = await resolveOwnerUserId(data.ownerUserId, data.ownerName);
     const task = await prisma.task.create({ data: {
-      partnerId: nullableId(data.partnerId), collaborationId: nullableId(data.collaborationId), title: data.title,
-      description: data.description || null, taskType: data.taskType, dueDate: new Date(data.dueDate), status: data.status,
-      priority: data.priority, ownerUserId: nullableId(data.ownerUserId), completedAt: data.status === "done" ? new Date() : null,
+      partnerId: nullableId(data.partnerId),
+      collaborationId: nullableId(data.collaborationId),
+      title: data.title,
+      description: data.description || null,
+      taskType: data.taskType,
+      dueDate: new Date(data.dueDate),
+      status: data.status,
+      priority: data.priority,
+      ownerUserId,
+      completedAt: data.status === "done" ? new Date() : null,
     }});
     return Response.json({ id: task.id }, { status: 201 });
   } catch (error) { return apiError(error); }
