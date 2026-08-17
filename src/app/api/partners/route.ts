@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { apiError, requireEditor } from "@/lib/authz";
-import { nullableId, partnerSchema } from "@/lib/crm-validation";
+import { normalizeProfileUrl, partnerSchema } from "@/lib/crm-validation";
+import { resolveOwnerUserId } from "@/lib/owners";
 
 export async function POST(request: Request) {
   try {
@@ -9,6 +10,7 @@ export async function POST(request: Request) {
     if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     const data = parsed.data;
     const suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`.toUpperCase();
+    const ownerUserId = await resolveOwnerUserId(data.ownerUserId, data.ownerName);
     const partner = await prisma.partner.create({
       data: {
         partnerCode: `${data.partnerType === "Media" ? "MEDIA" : "KOL"}-${suffix}`,
@@ -20,13 +22,13 @@ export async function POST(request: Request) {
         email: data.email || null,
         phone: data.phone || null,
         status: data.status,
-        ownerUserId: nullableId(data.ownerUserId),
+        ownerUserId,
         notesText: data.notesText || null,
         socialAccounts: data.profileUrl ? { create: {
           platform: data.platform ?? "other",
           handle: data.handle || null,
           profileUrl: data.profileUrl,
-          normalizedUrl: data.profileUrl.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "").toLowerCase(),
+          normalizedUrl: normalizeProfileUrl(data.profileUrl),
           followers: data.followers ?? null,
           avgViews: data.avgViews ?? null,
           isPrimary: true,
