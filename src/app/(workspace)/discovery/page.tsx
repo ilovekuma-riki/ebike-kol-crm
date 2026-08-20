@@ -1,3 +1,33 @@
-import { Plus, Sparkles } from "lucide-react"; import { PageHeader, Button } from "@/components/page-header"; import { StatusPill } from "@/components/status-pill";
-const people=[["Volt Journey","YouTube","US","84K","8.2%","91"],["E-Bike Alltag","Instagram","EU","126K","6.9%","87"],["Pedal Urbano","TikTok","BR","210K","10.4%","84"],["Northern Trails","YouTube","CA","62K","7.8%","81"]];
-export default function Discovery(){return <div><PageHeader eyebrow="CREATOR DISCOVERY" title="候选人池" description="管理尚未进入 Partner 主档的潜力创作者，为后续相似度发现和 AI 推荐保留结构。" action={<Button><span className="flex gap-2"><Plus size={13}/>新增候选人</span></Button>}/><div className="p-5 md:p-8"><div className="mb-5 rounded-[15px] border border-[#d8e0e7] bg-[#eaf0f5] p-5"><Sparkles size={17} className="text-[#4b6c89]"/><b className="mt-3 block text-sm">智能推荐接口已预留</b><p className="mt-1 text-[11px] text-[#617181]">首版不生成伪 AI 结果；当历史高绩效样本足够时，可接入潜力分模型。</p></div><div className="overflow-hidden rounded-[16px] border border-[#e1e5e8] bg-white"><div className="grid grid-cols-6 bg-[#fafbfc] px-5 py-3 text-[10px] text-[#7b838b]"><span>创作者</span><span>平台</span><span>市场</span><span>粉丝</span><span>互动率</span><span>潜力分</span></div>{people.map(x=><div className="grid grid-cols-6 items-center border-t border-[#edf0f2] px-5 py-4 text-xs" key={x[0]}><b>{x[0]}</b><span>{x[1]}</span><span>{x[2]}</span><span className="font-mono">{x[3]}</span><span>{x[4]}</span><span><StatusPill tone="blue">{x[5]}</StatusPill></span></div>)}</div></div></div>}
+import { PageHeader } from "@/components/page-header";
+import { CandidateForm, ConvertCandidateButton } from "@/components/crm-actions";
+import { StatusPill } from "@/components/status-pill";
+import { prisma } from "@/lib/db";
+import { compactNumber } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
+const platformLabels: Record<string, string> = { youtube: "YouTube", tiktok: "TikTok", instagram: "Instagram", facebook: "Facebook", website: "网站", other: "其他" };
+
+export default async function Discovery() {
+  const candidates = await prisma.creatorCandidate.findMany({
+    where: { archivedAt: null, NOT: { status: "converted" } },
+    orderBy: [{ potentialScore: "desc" }, { createdAt: "desc" }],
+  });
+  return <div>
+    <PageHeader eyebrow="CREATOR DISCOVERY" title="候选人池" description="保存尚未进入 Partner 主档的潜力创作者；确认合作价值后，可一键转为 Partner。" action={<CandidateForm/>}/>
+    <div className="p-5 md:p-8">
+      <div className="overflow-hidden rounded-[16px] border border-[#e1e5e8] bg-white">
+        <div className="hidden grid-cols-[1.4fr_.8fr_.7fr_.7fr_.7fr_.6fr_auto] bg-[#fafbfc] px-5 py-3 text-[10px] text-[#7b838b] md:grid"><span>创作者</span><span>平台</span><span>市场</span><span>粉丝</span><span>互动率</span><span>潜力分</span><span>操作</span></div>
+        {candidates.length ? candidates.map(candidate => <div className="grid gap-3 border-t border-[#edf0f2] px-5 py-4 text-xs first:border-0 md:grid-cols-[1.4fr_.8fr_.7fr_.7fr_.7fr_.6fr_auto] md:items-center" key={candidate.id}>
+          <div><b>{candidate.name}</b><p className="mt-1 text-[10px] text-[#7b838b]">{candidate.handle || candidate.url}</p></div>
+          <span>{platformLabels[candidate.platform] ?? candidate.platform}</span>
+          <span>{candidate.country || "—"}</span>
+          <span className="font-mono">{candidate.followers == null ? "—" : compactNumber(candidate.followers)}</span>
+          <span>{candidate.engagementRate == null ? "—" : `${(Number(candidate.engagementRate) * 100).toFixed(1)}%`}</span>
+          <span>{candidate.potentialScore == null ? "—" : <StatusPill tone="blue">{Math.round(Number(candidate.potentialScore))}</StatusPill>}</span>
+          <ConvertCandidateButton candidateId={candidate.id}/>
+        </div>) : <div className="p-10 text-center text-xs text-[#7b838b]">暂无候选人。点击右上角“新增候选人”开始建立候选池。</div>}
+      </div>
+      <p className="mt-3 text-[10px] text-[#7b838b]">转为 Partner 后，该候选人会从这里移除，并自动进入 Partner 主档。</p>
+    </div>
+  </div>;
+}

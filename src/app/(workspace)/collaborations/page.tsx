@@ -19,7 +19,8 @@ export default async function Collaborations(){
   const risk=rows.filter(x=>x.priority==="urgent"||x.issueType).length;
   const done=rows.filter(x=>x.status==="completed").length;
   return <div>
-    <PageHeader eyebrow="COLLABORATION RECORDS" title="合作记录" description="同一 Partner 的每个车型、每一轮合作都独立记录成本、交付和收益。" action={<CollaborationForm partners={partners} users={users}/>}/>
+    <PageHeader eyebrow="COLLABORATION RECORDS" title="合作记录" description="集中查看、编辑或归档已有合作。新合作请从对应 Partner 详情页创建。"
+/>
     <div className="p-5 md:p-8">
       <div className="mb-4 flex gap-2">{[`全部 ${rows.length}`,`进行中 ${active}`,`有风险 ${risk}`,`已完成 ${done}`].map((x,i)=><button key={x} className={`rounded-full px-4 py-2 text-[11px] font-semibold ${i===0?"bg-[#111418] text-white":"border border-[#dfe3e7] bg-white"}`}>{x}</button>)}</div>
       <div className="overflow-hidden rounded-[16px] border border-[#e1e5e8] bg-white"><div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left"><thead className="bg-[#fafbfc] text-[10px] text-[#818990]"><tr>{["Partner","产品","市场","状态","下一行动","负责人","优先级","操作"].map(x=><th className="px-5 py-3" key={x}>{x}</th>)}</tr></thead><tbody>{rows.map(x=><tr className="border-t border-[#ebedef] text-xs" key={x.id}>

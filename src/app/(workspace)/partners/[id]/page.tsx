@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { ArrowUpRight, CalendarClock, CheckCircle2, Circle, Mail, MapPin, MessageSquareText } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, ArrowUpRight, CalendarClock, CheckCircle2, Circle, Mail, MapPin, MessageSquareText } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
 import {
@@ -53,6 +54,11 @@ export default async function PartnerDetail({params}:{params:Promise<{id:string}
   const allPartnerOption=[{id:p.id,name:p.name}];
 
   return <div>
+    <div className="px-5 pt-5 md:px-8 md:pt-6">
+      <Link href="/partners" className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-[#66717b] hover:bg-[#eef1f3] hover:text-[#111418]">
+        <ArrowLeft size={14}/>返回 Partner 主档
+      </Link>
+    </div>
     <PageHeader
       eyebrow={`${p.partnerCode} / PARTNER`}
       title={p.name}

@@ -37,6 +37,20 @@ export const socialAccountSchema = z.object({
   isPrimary: z.coerce.boolean().optional().default(false),
 });
 
+export const candidateSchema = z.object({
+  name: z.string().trim().min(1, "请填写候选人名称").max(120),
+  platform: z.enum(["youtube", "tiktok", "instagram", "facebook", "website", "other"]),
+  handle: optionalText,
+  url: z.url("主页链接格式不正确"),
+  country: optionalText,
+  followers: z.coerce.number().int().min(0).optional().nullable(),
+  avgViews: z.coerce.number().int().min(0).optional().nullable(),
+  engagementRate: z.coerce.number().min(0).max(100).optional().nullable(),
+  contentCategory: optionalText,
+  potentialScore: z.coerce.number().min(0).max(100).optional().nullable(),
+  notes: z.string().trim().max(3000).optional().nullable(),
+});
+
 export const collaborationSchema = z.object({
   partnerId: z.string().uuid(),
   product: z.string().trim().min(1, "请填写合作产品").max(120),

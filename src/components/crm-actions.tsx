@@ -260,3 +260,35 @@ export function TaskForm({partners,collaborations,users,fixedPartnerId,taskId,in
 export function DeleteTaskButton({taskId}:{taskId:string}){const router=useRouter();const [busy,setBusy]=useState(false);return <button disabled={busy} onClick={async()=>{if(!confirm("确定删除这个任务吗？"))return;setBusy(true);try{await send(`/api/tasks/${taskId}`,"DELETE");router.refresh()}finally{setBusy(false)}}} className="rounded-lg border border-[#ead6d4] p-2 text-[#b64d46] hover:bg-[#fbf1f0]" aria-label="删除任务"><Trash2 size={13}/></button>}
 
 export function TaskStatusSelect({taskId,status}:{taskId:string;status:string}){const router=useRouter();const [value,setValue]=useState(status);const [busy,setBusy]=useState(false);return <select aria-label="更新任务状态" value={value} disabled={busy} onChange={async e=>{const next=e.target.value;setValue(next);setBusy(true);try{await send(`/api/tasks/${taskId}`,"PATCH",{status:next});router.refresh()}catch{setValue(status)}finally{setBusy(false)}}} className="rounded-[8px] border border-[#dfe3e7] bg-white px-2 py-1.5 text-[10px]"><option value="todo">待处理</option><option value="in_progress">进行中</option><option value="waiting_external">等待对方</option><option value="done">已完成</option><option value="cancelled">已取消</option></select>}
+
+export function CandidateForm() {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function submit(event: FormEvent<HTMLFormElement>, close: () => void) {
+    event.preventDefault(); setBusy(true); setError("");
+    try { await send("/api/candidates", "POST", Object.fromEntries(new FormData(event.currentTarget))); close(); router.refresh(); }
+    catch (e) { setError(e instanceof Error ? e.message : "保存失败"); }
+    finally { setBusy(false); }
+  }
+  return <Modal title="新增候选人" description="先保存尚未正式合作的潜力创作者；确认值得合作后，再转为 Partner。" trigger={<button className="rounded-[10px] bg-[#111418] px-4 py-2.5 text-xs font-semibold text-white"><span className="flex items-center gap-2"><Plus size={14}/>新增候选人</span></button>}>
+    {close => <form onSubmit={e => submit(e, close)}><div className="grid max-h-[65vh] gap-4 overflow-y-auto p-5 sm:grid-cols-2">
+      <label className={label}>名称 *<input name="name" required className={input}/></label>
+      <label className={label}>平台<select name="platform" defaultValue="youtube" className={input}><option value="youtube">YouTube</option><option value="tiktok">TikTok</option><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="website">网站</option><option value="other">其他</option></select></label>
+      <label className={label}>账号名称<input name="handle" placeholder="@handle" className={input}/></label>
+      <label className={label}>国家/市场<input name="country" placeholder="US / EU / CA / BR" className={input}/></label>
+      <label className={`${label} sm:col-span-2`}>主页链接 *<input name="url" type="url" required placeholder="https://…" className={input}/></label>
+      <label className={label}>粉丝量<input name="followers" type="number" min="0" className={input}/></label>
+      <label className={label}>平均播放量<input name="avgViews" type="number" min="0" className={input}/></label>
+      <label className={label}>互动率（%）<input name="engagementRate" type="number" min="0" max="100" step="0.01" className={input}/></label>
+      <label className={label}>潜力分（0-100）<input name="potentialScore" type="number" min="0" max="100" step="0.1" className={input}/></label>
+      <label className={`${label} sm:col-span-2`}>内容类型<input name="contentCategory" placeholder="测评 / 通勤 / 改装…" className={input}/></label>
+      <label className={`${label} sm:col-span-2`}>备注<textarea name="notes" rows={3} className={input}/></label>
+    </div><SubmitBar close={close} busy={busy} error={error}/></form>}
+  </Modal>;
+}
+
+export function ConvertCandidateButton({ candidateId }: { candidateId: string }) {
+  const router = useRouter(); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  return <div className="text-right"><button disabled={busy} onClick={async()=>{if(!confirm("确认将这位候选人转为 Partner 吗？候选资料会自动带入主档。"))return;setBusy(true);setError("");try{const result=await send(`/api/candidates/${candidateId}/convert`,"POST");router.push(`/partners/${result.id}`)}catch(e){setError(e instanceof Error?e.message:"转换失败");setBusy(false)}}} className="rounded-lg border border-[#cfd8df] bg-white px-3 py-2 text-[11px] font-semibold hover:bg-[#f2f5f7] disabled:opacity-50">{busy?"转换中…":"转为 Partner"}</button>{error&&<p className="mt-1 max-w-32 text-[9px] text-[#b64d46]">{error}</p>}</div>;
+}
